@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Wardrobe — твой персональный AI-стилист</title>
+<meta name="description" content="AI Wardrobe знает твой гардероб, понимает твой стиль и каждый день собирает образ, который подходит именно тебе.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23C99483'/%3E%3Cpath d='M32 17c-3.6 0-6 2.2-6 5 0 2 1.2 3.3 3 4.2v2.2L14 36.5c-1.6.9-2.6 2.4-2.6 4.1C11.4 43.6 13.9 46 17 46h30c3.1 0 5.6-2.4 5.6-5.4 0-1.7-1-3.2-2.6-4.1L35 28.4v-2.2' fill='none' stroke='%23FFF7F0' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   1. TOKENS
+   ========================================================= */
+:root{
+  /* базовая палитра */
+  --bg:#F7F4F0;
+  --card:#FFFFFF;
+  --ink:#252321;
+  --ink-soft:#77716B;
+  --accent:#C99483;
+  --accent-dark:#B27C6A;
+  --beige:#EDE7E0;
+  --line:#E4DDD3;
+  --accent-deep:#AD7C6A;
+
+  /* производные тона — только из палитры выше */
+  --accent-wash:rgba(201,148,131,.14);
+  --ink-wash:rgba(37,35,33,.06);
+  --glass:rgba(255,255,255,.90);
+
+  --radius-lg:28px;
+  --radius-md:18px;
+  --radius-sm:12px;
+
+  --shadow-sm:0 2px 8px rgba(37,35,33,.05);
+  --shadow-md:0 14px 34px -18px rgba(37,35,33,.30);
+  --shadow-lg:0 30px 60px -30px rgba(37,35,33,.35);
+
+  --maxw:1180px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+/* =========================================================
+   2. RESET / BASE
+   ========================================================= */
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
+  line-height:1.5;overflow-x:hidden;
+}
+h1,h2,h3,h4,.serif{font-family:'DM Serif Display',serif;font-weight:400;letter-spacing:-.01em;margin:0;}
+p{margin:0;}
+a{color:inherit;text-decoration:none;}
+img,svg,video{display:block;max-width:100%;}
+button{font:inherit;color:inherit;}
+::selection{background:var(--accent);color:#fff;}
+:focus-visible{outline:2px solid var(--accent-deep);outline-offset:3px;border-radius:6px;}
+section[id],main [id]{scroll-margin-top:100px;}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;}
+@media (max-width:640px){.wrap{padding:0 20px;}}
+section{padding:110px 0;}
+@media (max-width:760px){section{padding:74px 0;}}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-deep);margin-bottom:16px;
+}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+.section-head{max-width:660px;margin-bottom:56px;}
+.section-head h2{font-size:clamp(30px,3.6vw,46px);line-height:1.1;}
+.section-head p{color:var(--ink-soft);font-size:16.5px;margin-top:16px;}
+.section-head.center{margin-left:auto;margin-right:auto;text-align:center;}
+.section-head.center .eyebrow{justify-content:center;}
+
+/* =========================================================
+   3. BUTTONS
+   ========================================================= */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:15px 28px;border-radius:100px;font-size:15px;font-weight:600;
+  border:1px solid transparent;cursor:pointer;white-space:nowrap;
+  transition:transform .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:#3a3733;box-shadow:0 8px 20px rgba(37,35,33,.22);}
+.btn-secondary{background:transparent;color:var(--ink);border-color:var(--line);}
+.btn-secondary:hover{border-color:var(--ink);}
+.btn-ghost{background:var(--beige);color:var(--ink);}
+.btn-ghost:hover{background:#e4dccf;}
+.btn-sm{padding:10px 18px;font-size:13px;}
+
+.btn-round{
+  width:42px;height:42px;flex:0 0 42px;border-radius:50%;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .25s var(--ease), color .25s var(--ease), transform .25s var(--ease), border-color .25s var(--ease);
+}
+.btn-round svg{width:16px;height:16px;}
+
+/* =========================================================
+   4. LOGO
+   ========================================================= */
+.logo{display:inline-flex;align-items:center;gap:11px;}
+.logo-mark{
+  width:36px;height:36px;flex:0 0 36px;border-radius:11px;
+  background:linear-gradient(150deg,var(--accent) 0%, var(--accent-deep) 55%, var(--ink) 140%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px -4px rgba(173,124,106,.55);
+}
+.logo-mark svg{width:22px;height:22px;}
+.logo-type{display:flex;flex-direction:column;line-height:1;}
+.logo-name{font-size:16.5px;letter-spacing:-.005em;}
+.logo-name .ai{font-family:'DM Serif Display',serif;font-style:italic;color:var(--accent-deep);font-size:18px;margin-right:1px;}
+.logo-name .wd{font-weight:600;}
+.logo-tag{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);margin-top:4px;}
+.logo--lg .logo-mark{width:46px;height:46px;flex:0 0 46px;border-radius:14px;}
+.logo--lg .logo-mark svg{width:28px;height:28px;}
+.logo--lg .logo-name{font-size:20px;}
+.logo--lg .logo-name .ai{font-size:22px;}
+
+/* =========================================================
+   5. BADGES / PILLS / TAGS
+   ========================================================= */
+.badge-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 13px;border-radius:100px;
+  font-size:12px;font-weight:600;
+  background:var(--glass);backdrop-filter:blur(8px);
+  border:1px solid var(--line);color:var(--ink);
+  box-shadow:var(--shadow-sm);
+}
+.badge-pill.solid{background:var(--ink);color:#fff;border-color:var(--ink);}
+.badge-pill.warm{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px -6px rgba(173,124,106,.9);}
+.badge-pill.muted{background:var(--beige);color:var(--ink-soft);border-color:var(--line);box-shadow:none;}
+.badge-pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.badge-pill .dot.live{background:var(--accent);animation:pulse 2s ease-in-out infinite;}
+.badge-pill.warm .dot.live{background:#fff;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.75);}}
+
+.corner-badge{position:absolute;z-index:5;}
+.corner-badge.tr{top:14px;right:14px;}
+.corner-badge.tl{top:14px;left:14px;}
+.corner-badge.bl{bottom:14px;left:14px;}
+
+.tag{display:inline-flex;align-items:center;padding:6px 12px;border-radius:100px;font-size:12.5px;font-weight:500;line-height:1;}
+.tag--warm{background:var(--accent-wash);color:var(--accent-deep);}
+.tag--sand{background:var(--beige);color:var(--ink-soft);}
+.tag--ink{background:var(--ink-wash);color:var(--ink);}
+
+.g-chip{
+  padding:8px 14px;border-radius:100px;background:var(--card);
+  border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--ink-soft);
+  animation:chipIn .45s var(--ease) both;
+}
+@keyframes chipIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* декоративная бирка — фирменная деталь на карточках */
+.hangtag{position:absolute;pointer-events:none;z-index:6;}
+.hangtag svg{width:100%;height:auto;}
+
+/* =========================================================
+   6. HEADER
+   ========================================================= */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(247,244,240,.84);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+nav.wrap{display:flex;align-items:center;justify-content:space-between;height:82px;gap:20px;}
+.nav-links{display:flex;gap:34px;font-size:14px;color:var(--ink-soft);font-weight:500;}
+.nav-links a{transition:color .2s var(--ease);}
+.nav-links a:hover{color:var(--ink);}
+@media (max-width:880px){.nav-links{display:none;}}
+
+/* =========================================================
+   7. MARQUEE
+   ========================================================= */
+.marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--beige);overflow:hidden;padding:15px 0;}
+.marquee-track{display:flex;width:max-content;animation:marq 38s linear infinite;}
+.marquee-item{
+  display:flex;align-items:center;gap:28px;padding-right:28px;
+  font-family:'DM Serif Display',serif;font-size:19px;color:var(--ink-soft);white-space:nowrap;
+}
+.marquee-item i{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 6px;}
+@keyframes marq{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+/* =========================================================
+   8. TWIN CARD (видео и стоп-кадр)
+   ========================================================= */
+.dt-card{
+  position:relative;border-radius:var(--radius-lg);
+  background:radial-gradient(120% 100% at 50% 0%, #fff 0%, var(--beige) 82%);
+  border:1px solid var(--line);overflow:hidden;
+  box-shadow:var(--shadow-lg);isolation:isolate;
+}
+.dt-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;z-index:1;}
+/* два слоя стоп-кадра — для мягкой смены образа */
+.dt-still{opacity:0;transition:opacity .55s var(--ease);}
+.dt-still.on{opacity:1;}
+
+.dt-tone{
+  position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    linear-gradient(to bottom, rgba(247,244,240,.28) 0%, rgba(247,244,240,0) 24%, rgba(37,35,33,.02) 60%, rgba(37,35,33,.20) 100%),
+    radial-gradient(120% 90% at 50% 30%, rgba(201,148,131,0) 44%, rgba(201,148,131,.15) 100%);
+  mix-blend-mode:multiply;
+}
+.dt-rings{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.dt-rings svg{width:76%;opacity:.32;}
+
+.dt-scanline{
+  position:absolute;left:0;right:0;height:34%;top:-40%;z-index:4;pointer-events:none;opacity:0;
+  background:linear-gradient(to bottom, rgba(201,148,131,0) 0%, rgba(201,148,131,.5) 45%, rgba(255,255,255,.88) 50%, rgba(201,148,131,.5) 55%, rgba(201,148,131,0) 100%);
+}
+.dt-card.scanning .dt-scanline{animation:scan 1.15s var(--ease);}
+@keyframes scan{0%{opacity:0;top:-40%;}12%{opacity:1;}88%{opacity:1;}100%{opacity:0;top:106%;}}
+.dt-card.scanning .dt-media{animation:flicker 1.15s ease-in-out;}
+@keyframes flicker{0%,100%{filter:none;}42%{filter:brightness(1.12) saturate(.5) contrast(1.03);}70%{filter:brightness(1.03);}}
+
+.dt-mesh{
+  position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
+  background-image:linear-gradient(rgba(201,148,131,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(201,148,131,.35) 1px,transparent 1px);
+  background-size:38px 38px;transition:opacity .4s var(--ease);
+  -webkit-mask-image:radial-gradient(70% 60% at 50% 45%, #000 0%, transparent 78%);
+          mask-image:radial-gradient(70% 60% at 50% 45%, #000 0%, transparent 78%);
+}
+.dt-card.scanning .dt-mesh{opacity:.7;}
+
+.dt-pill{
+  position:absolute;z-index:5;display:flex;align-items:center;gap:7px;
+  background:var(--glass);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:100px;padding:9px 15px;
+  font-size:12.5px;font-weight:600;color:var(--ink);box-shadow:var(--shadow-sm);
+}
+.dt-pill.weather{top:16px;left:16px;}
+.dt-pill.look{bottom:16px;left:16px;right:16px;justify-content:space-between;gap:12px;}
+.dt-pill.look .look-name{display:flex;align-items:center;gap:8px;min-width:0;}
+.dt-pill.look .look-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dt-pill.look .look-meta{color:var(--ink-soft);font-weight:500;white-space:nowrap;}
+.dt-pill .spark{width:14px;height:14px;color:var(--accent-deep);flex:0 0 14px;}
+
+/* =========================================================
+   9. HERO
+   ========================================================= */
+.hero{padding:84px 0 96px;}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
+@media (max-width:980px){.hero-grid{grid-template-columns:1fr;gap:52px;}}
+.hero h1{font-size:clamp(44px,5.6vw,72px);line-height:1.02;}
+.hero h1 em{font-style:italic;color:var(--accent-deep);}
+.hero-sub{font-size:18px;color:var(--ink-soft);max-width:460px;margin:22px 0 34px;}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;}
+
+/* полоска образов под заголовком */
+.look-strip{display:flex;align-items:center;gap:16px;margin-top:34px;flex-wrap:wrap;}
+.look-strip-thumbs{display:flex;}
+.look-strip-thumbs img{
+  width:42px;height:54px;object-fit:cover;object-position:50% 16%;
+  border-radius:9px;border:2px solid var(--bg);background:var(--beige);
+  margin-left:-11px;box-shadow:var(--shadow-sm);
+}
+.look-strip-thumbs img:first-child{margin-left:0;}
+.look-strip-text{font-size:13.5px;color:var(--ink-soft);max-width:230px;line-height:1.4;}
+.look-strip-text b{color:var(--ink);font-weight:600;}
+
+.hero-stage{position:relative;}
+.hero-stage .dt-card{aspect-ratio:4/5;}
+
+.hero-offer{
+  position:absolute;z-index:8;left:-38px;bottom:92px;width:264px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:18px 20px 20px;box-shadow:var(--shadow-md);
+}
+.hero-offer .ho-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.hero-offer h3{font-size:17px;line-height:1.25;margin-bottom:6px;}
+.hero-offer p{font-size:13px;color:var(--ink-soft);line-height:1.45;}
+.hero-offer .hangtag{width:52px;top:-26px;right:14px;}
+@media (max-width:1100px){.hero-offer{left:-16px;}}
+@media (max-width:980px){
+  .hero-offer{position:static;width:auto;margin-top:22px;}
+  .hero-offer .hangtag{display:none;}
+}
+
+/* три вопроса */
+.three-q{border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.three-q .wrap{display:grid;grid-template-columns:repeat(3,1fr);}
+@media (max-width:760px){.three-q .wrap{grid-template-columns:1fr;}}
+.tq-item{padding:36px 30px;border-left:1px solid var(--line);}
+.tq-item:first-child{border-left:none;padding-left:0;}
+@media (max-width:760px){
+  .tq-item{border-left:none;border-top:1px solid var(--line);padding-left:0;}
+  .tq-item:first-child{border-top:none;}
+}
+.tq-q{font-size:13px;color:var(--ink-soft);margin-bottom:8px;font-weight:600;}
+.tq-a{font-family:'DM Serif Display',serif;font-size:21px;}
+
+/* =========================================================
+   10. REVEAL
+   ========================================================= */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.reveal.in{opacity:1;transform:none;}
+
+/* =========================================================
+   11. DEMO
+   ========================================================= */
+.demo-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:56px;align-items:start;}
+@media (max-width:1020px){.demo-grid{grid-template-columns:1fr;gap:48px;}}
+
+.demo-stage{position:relative;}
+.demo-stage .dt-card{aspect-ratio:4/4.9;}
+.dt-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;}
+
+/* карточки сценариев — со стоп-кадром */
+.scen-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;}
+.scen-grid > *:nth-child(2){margin-top:36px;}
+.scen-grid > *:nth-child(3){margin-top:-18px;}
+.scen-grid > *:nth-child(4){margin-top:18px;}
+@media (max-width:620px){
+  .scen-grid{grid-template-columns:1fr;gap:14px;}
+  .scen-grid > *{margin-top:0 !important;}
+}
+
+.scen-card{
+  position:relative;text-align:left;width:100%;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);
+  padding:12px 12px 18px;cursor:pointer;display:flex;flex-direction:column;gap:14px;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.scen-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow-md);}
+.scen-card[aria-pressed="true"]{border-color:var(--ink);box-shadow:var(--shadow-md);}
+.scen-card[aria-pressed="true"]::after{
+  content:"";position:absolute;inset:-1px;border-radius:var(--radius-md);
+  border:1.5px solid var(--ink);pointer-events:none;
+}
+
+.sc-photo{position:relative;border-radius:12px;overflow:hidden;background:var(--beige);aspect-ratio:3/3.4;}
+.sc-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 14%;transition:transform .5s var(--ease);}
+.scen-card:hover .sc-photo img{transform:scale(1.04);}
+.sc-photo .corner-badge{top:10px;left:10px;}
+.sc-photo .sc-count{
+  position:absolute;z-index:5;right:10px;bottom:10px;
+  background:var(--glass);backdrop-filter:blur(6px);border:1px solid var(--line);
+  border-radius:100px;padding:5px 10px;font-size:11.5px;font-weight:600;color:var(--ink);
+}
+
+.sc-body{padding:0 8px;display:flex;flex-direction:column;gap:12px;}
+.sc-head{display:flex;align-items:center;gap:8px;}
+.sc-rate{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink);}
+.sc-rate svg{width:13px;height:13px;color:var(--accent);}
+.sc-sep{color:var(--line);}
+.sc-when{font-size:12px;color:var(--ink-soft);}
+.sc-title{display:flex;align-items:center;gap:9px;font-size:20px;font-family:'DM Serif Display',serif;}
+.sc-title .emo{font-size:17px;font-family:'Inter',sans-serif;}
+.sc-tags{display:flex;flex-wrap:wrap;gap:7px;}
+.sc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-top:1px solid var(--line);padding-top:13px;}
+.sc-metric .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px;}
+.sc-metric .v{font-size:13.5px;font-weight:600;}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:13px;}
+.sc-author{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-soft);}
+.sc-ava{
+  width:26px;height:26px;border-radius:50%;flex:0 0 26px;
+  background:linear-gradient(150deg,var(--accent),var(--accent-deep) 70%,var(--ink) 150%);
+}
+.scen-card:hover .btn-round,
+.scen-card[aria-pressed="true"] .btn-round{background:var(--ink);color:#fff;border-color:var(--ink);}
+.scen-card:hover .btn-round{transform:translateX(2px);}
+
+/* сценарии «скоро» — компактные пилюли */
+.soon-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px;align-items:center;}
+.soon-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-right:4px;}
+.soon-pill{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:100px;
+  border:1px dashed var(--line);background:transparent;font-size:13.5px;color:var(--ink-soft);
+}
+.menu-note{margin-top:20px;font-size:12.5px;color:var(--ink-soft);max-width:520px;}
+
+/* шаги */
+.steps4{display:grid;grid-template-columns:repeat(4,1fr);margin-top:72px;position:relative;}
+@media (max-width:700px){.steps4{grid-template-columns:1fr 1fr;gap:24px 0;margin-top:52px;}}
+.steps4::before{content:"";position:absolute;top:15px;left:5%;right:5%;height:1px;background:var(--line);}
+@media (max-width:700px){.steps4::before{display:none;}}
+.step4{position:relative;padding-right:16px;}
+.step4 .num{
+  width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+  position:relative;z-index:2;margin-bottom:14px;
+}
+.step4 h4{font-size:14.5px;font-weight:600;font-family:'Inter',sans-serif;margin-bottom:6px;}
+.step4 p{font-size:13.5px;color:var(--ink-soft);}
+
+/* карточка результата */
+.result-card{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:22px;position:relative;}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px;}
+.rc-title{font-family:'DM Serif Display',serif;font-size:21px;}
+.rc-meta{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+.rc-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;margin-bottom:14px;}
+.rc-stat .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px;}
+.rc-stat .v{font-size:14px;font-weight:600;}
+.rc-comment{font-size:14.5px;color:var(--ink-soft);margin:0 0 18px;line-height:1.55;}
+.rc-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+.rating{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.rating .rt-label{font-size:12.5px;color:var(--ink-soft);}
+.stars{display:flex;gap:3px;}
+.star{background:none;border:0;padding:2px;cursor:pointer;line-height:0;color:var(--line);
+  transition:color .18s var(--ease), transform .18s var(--ease);}
+.star svg{width:17px;height:17px;}
+.star:hover{transform:scale(1.14);}
+.star.on{color:var(--accent);}
+
+/* =========================================================
+   12. WARDROBE / ADD
+   ========================================================= */
+.add-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px;}
+@media (max-width:760px){.add-grid{grid-template-columns:1fr;}}
+.add-card{
+  position:relative;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:26px;
+  transition:transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.add-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow-md);}
+.add-grid > .add-card:nth-child(2){margin-top:26px;}
+.add-grid > .add-card:nth-child(3){margin-top:10px;}
+@media (max-width:760px){.add-grid > .add-card{margin-top:0 !important;}}
+.add-step{font-size:11px;letter-spacing:.1em;color:var(--ink-soft);font-weight:600;margin-bottom:14px;}
+.add-ic{width:38px;height:38px;border-radius:11px;background:var(--beige);display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.add-card h4{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px;}
+.add-card p{font-size:14px;color:var(--ink-soft);}
+.add-foot{margin-top:30px;font-size:14px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:20px;}
+
+/* =========================================================
+   13. RECOMMENDATION
+   ========================================================= */
+.rec-wrap{
+  background:var(--ink);border-radius:var(--radius-lg);padding:44px;color:#fff;
+  display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;position:relative;overflow:hidden;
+}
+.rec-wrap::before{
+  content:"";position:absolute;width:440px;height:440px;right:-150px;top:-170px;border-radius:50%;
+  background:radial-gradient(circle, rgba(201,148,131,.30) 0%, rgba(201,148,131,0) 70%);
+}
+@media (max-width:900px){.rec-wrap{grid-template-columns:1fr;padding:30px;}}
+.rec-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#C9B8AE;margin-bottom:14px;font-weight:600;}
+.rec-copy{position:relative;z-index:1;}
+.rec-copy h3{font-size:27px;margin-bottom:14px;}
+.rec-copy .lead{color:#C9BEB6;font-size:15px;line-height:1.6;max-width:420px;}
+.rec-caption{margin-top:22px;font-size:13px;color:#B9AFA6;max-width:420px;}
+.rec-card{position:relative;z-index:1;background:#fff;color:var(--ink);border-radius:var(--radius-md);padding:20px;}
+.rec-thumb{position:relative;aspect-ratio:1.25/1;border-radius:12px;overflow:hidden;margin-bottom:16px;background:var(--beige);}
+.rec-thumb svg{width:100%;height:100%;}
+.rec-thumb .corner-badge{top:12px;left:12px;}
+.rec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.rec-name{font-weight:600;font-size:15.5px;}
+.rec-swatches{display:flex;gap:5px;}
+.rec-swatch{width:14px;height:14px;border-radius:50%;border:1px solid var(--line);}
+.rec-tags{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 4px;}
+.rec-price{font-family:'DM Serif Display',serif;font-size:23px;margin:10px 0 16px;}
+.rec-price small{font-size:12px;color:var(--ink-soft);font-family:'Inter',sans-serif;font-weight:500;}
+.rec-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* =========================================================
+   14. CHAT
+   ========================================================= */
+/* окно чата — по центру секции */
+.chat-shell{
+  position:relative;max-width:660px;margin:0 auto;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);
+}
+.chat-shell .corner-badge{top:-13px;right:22px;}
+
+/* шапка окна */
+.chat-bar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--ink);color:#fff;
+  padding:16px 20px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+}
+.chat-bar-ic{
+  width:38px;height:38px;flex:0 0 38px;border-radius:50%;
+  background:linear-gradient(150deg,var(--accent),var(--accent-deep) 80%);
+  display:flex;align-items:center;justify-content:center;
+}
+.chat-bar-ic svg{width:22px;height:22px;}
+.chat-bar-title{flex:1;min-width:0;line-height:1.25;}
+.chat-bar-title b{display:block;font-size:15px;font-weight:600;}
+.chat-bar-status{display:flex;align-items:center;gap:6px;font-size:12px;color:#B9AFA6;margin-top:3px;}
+.chat-bar-status .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.chat-bar-ctrls{display:flex;align-items:center;gap:14px;color:#8E8781;flex:0 0 auto;}
+.chat-bar-ctrls svg{width:16px;height:16px;}
+
+/* тело окна */
+.chat-body{padding:26px 24px 20px;}
+
+/* строка сообщения с аватаром */
+.msg-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;}
+.msg-row.right{justify-content:flex-end;}
+.msg-ava{
+  width:44px;height:44px;flex:0 0 44px;border-radius:50%;object-fit:cover;object-position:50% 12%;
+  border:3px solid var(--card);box-shadow:var(--shadow-sm);background:var(--beige);
+}
+.bubble{max-width:78%;padding:14px 18px;border-radius:16px;font-size:14.5px;line-height:1.5;}
+.bubble.user{background:var(--ink);color:#fff;border-bottom-right-radius:4px;}
+.bubble.ai{background:var(--beige);color:var(--ink);border-bottom-left-radius:4px;margin-bottom:14px;}
+
+/* круглый аватар AI, «приклеенный» к углу окна */
+.chat-ava{
+  position:absolute;z-index:6;left:-32px;bottom:70px;
+  width:76px;height:76px;border-radius:50%;
+  background:var(--card);border:1px solid var(--line);
+  box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;
+}
+.chat-ava svg{width:38px;height:38px;color:var(--accent-deep);}
+@media (max-width:820px){.chat-ava{left:auto;right:18px;bottom:auto;top:-30px;width:60px;height:60px;}
+  .chat-ava svg{width:30px;height:30px;}}
+
+/* строка ввода */
+.chat-input{
+  display:flex;align-items:center;gap:10px;
+  padding:16px 20px;border-top:1px solid var(--line);
+}
+.chat-input-field{
+  flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);
+  border-radius:100px;padding:13px 18px;font-size:14px;color:var(--ink-soft);
+}
+.chat-send{
+  width:44px;height:44px;flex:0 0 44px;border-radius:50%;
+  background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;
+}
+.chat-send svg{width:17px;height:17px;}
+
+.variant-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 18px;}
+@media (max-width:520px){.variant-row{grid-template-columns:1fr;}}
+.variant-tile{
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);
+  transition:border-color .25s var(--ease), transform .25s var(--ease);
+}
+.variant-tile:hover{border-color:var(--accent);transform:translateY(-2px);}
+.variant-tile img{width:100%;aspect-ratio:3/3.2;object-fit:cover;object-position:50% 12%;}
+.variant-tile .vt-cap{padding:10px 12px 12px;font-size:12px;color:var(--ink-soft);}
+.variant-tile .vt-cap b{display:block;font-family:'DM Serif Display',serif;font-weight:400;font-size:14.5px;color:var(--ink);margin-bottom:3px;}
+.quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.quick-row .g-chip{animation:none;}
+.weather-note{
+  margin-top:22px;display:flex;gap:12px;align-items:center;background:var(--bg);
+  border:1px dashed var(--line);border-radius:14px;padding:14px 18px;font-size:13.5px;color:var(--ink-soft);
+}
+.weather-note b{color:var(--ink);}
+
+/* =========================================================
+   15. TWIN + GAMIFICATION
+   ========================================================= */
+.twin-grid{display:grid;grid-template-columns:1fr .8fr;gap:64px;align-items:center;}
+@media (max-width:960px){.twin-grid{grid-template-columns:1fr;gap:44px;}}
+.twin-stage{position:relative;}
+.twin-stage .dt-card{aspect-ratio:3/4;}
+.twin-feats{display:flex;gap:0;margin-top:34px;flex-wrap:wrap;}
+.twin-feat{flex:1 1 130px;padding:16px 20px 0 0;border-top:1px solid var(--line);margin-top:22px;padding-top:16px;font-size:14px;font-weight:500;}
+
+.game-card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:28px;max-width:520px;}
+.game-card .corner-badge{top:-13px;right:24px;}
+.game-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;gap:14px;}
+.game-level{font-family:'DM Serif Display',serif;font-size:22px;}
+.game-tag{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-deep);font-weight:700;}
+.xp-bar{height:8px;border-radius:100px;background:var(--beige);overflow:hidden;margin-bottom:8px;}
+.xp-fill{height:100%;width:74%;background:linear-gradient(90deg,var(--accent),var(--accent-deep));}
+.xp-label{font-size:12.5px;color:var(--ink-soft);margin-bottom:20px;}
+.badge-row{display:flex;gap:10px;flex-wrap:wrap;}
+.badge{font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:100px;padding:7px 13px;}
+.game-caption{margin-top:18px;font-size:12.5px;color:var(--ink-soft);}
+
+/* =========================================================
+   16. FINAL + FOOTER
+   ========================================================= */
+.final{text-align:center;padding-top:60px;padding-bottom:0;}
+.final h2{font-size:clamp(32px,5vw,58px);}
+.final p{color:var(--ink-soft);margin:18px 0 34px;font-size:17px;}
+
+footer{border-top:1px solid var(--line);margin-top:110px;padding:52px 0 40px;}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;}
+@media (max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px;}}
+.foot-about{font-size:13.5px;color:var(--ink-soft);margin-top:16px;max-width:300px;line-height:1.55;}
+.foot-col h5{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 0 14px;font-family:'Inter',sans-serif;}
+.foot-col a,.foot-col span{display:block;font-size:14px;color:var(--ink);margin-bottom:9px;}
+.foot-col a:hover{color:var(--accent-deep);}
+.foot-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:44px;padding-top:22px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-soft);}
+
+/* =========================================================
+   17. MOTION PREFERENCES
+   ========================================================= */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  .reveal{opacity:1;transform:none;transition:none;}
+  .g-chip{animation:none;}
+  .badge-pill .dot.live{animation:none;}
+  .marquee-track{animation:none;}
+  .dt-card.scanning .dt-scanline,.dt-card.scanning .dt-media{animation:none;}
+  .dt-card.scanning .dt-mesh{opacity:.4;}
+  .dt-still{transition:none;}
+  .btn,.btn-round,.scen-card,.add-card,.variant-tile,.sc-photo img{transition:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="wrap">
+    <a href="#top" class="logo" aria-label="AI Wardrobe — на главную">
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 17c-3.6 0-6 2.2-6 5 0 2 1.2 3.3 3 4.2v2.2L14 36.5c-1.6.9-2.6 2.4-2.6 4.1C11.4 43.6 13.9 46 17 46h30c3.1 0 5.6-2.4 5.6-5.4 0-1.7-1-3.2-2.6-4.1L35 28.4v-2.2"
+                stroke="#FFF7F0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M46 14.5l1.2 3.4 3.4 1.2-3.4 1.2-1.2 3.4-1.2-3.4-3.4-1.2 3.4-1.2z" fill="#FFF7F0"/>
+        </svg>
+      </span>
+      <span class="logo-type">
+        <span class="logo-name"><span class="ai">AI</span> <span class="wd">Wardrobe</span></span>
+        <span class="logo-tag">Digital Stylist</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="#demo">Как это работает</a>
+      <a href="#wardrobe">Гардероб</a>
+      <a href="#twin">Digital Twin</a>
+    </div>
+    <a href="#demo" class="btn btn-ghost btn-sm">Присоединиться</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">AI-стилист · Digital Twin</div>
+        <h1>Что надеть<br><em>сегодня?</em></h1>
+        <p class="hero-sub">AI знает твой гардероб, понимает твой стиль и каждый день собирает образ, который подходит именно тебе.</p>
+        <div class="hero-ctas">
+          <a href="#demo" class="btn btn-primary">Найти лук →</a>
+          <a href="#demo" class="btn btn-secondary">Посмотреть, как это работает</a>
+        </div>
+
+        <div class="look-strip">
+          <div class="look-strip-thumbs" aria-hidden="true">
+            <img src="assets/thumb-home.jpg" alt="" width="42" height="54" loading="lazy" decoding="async">
+            <img src="assets/thumb-work.jpg" alt="" width="42" height="54" loading="lazy" decoding="async">
+            <img src="assets/thumb-date.jpg" alt="" width="42" height="54" loading="lazy" decoding="async">
+            <img src="assets/thumb-city.jpg" alt="" width="42" height="54" loading="lazy" decoding="async">
+          </div>
+          <p class="look-strip-text"><b>Четыре готовых образа</b> — по одному тапу на каждый повод.</p>
+        </div>
+      </div>
+
+      <div class="hero-stage">
+        <div class="dt-card" id="heroCard">
+          <video class="dt-media" id="heroVideo"
+                 src="0807.mp4" poster="assets/look-home.jpg"
+                 autoplay loop muted playsinline preload="auto"
+                 aria-label="Digital Twin последовательно примеряет четыре образа"></video>
+          <div class="dt-tone" aria-hidden="true"></div>
+          <div class="dt-mesh" aria-hidden="true"></div>
+          <div class="dt-rings" aria-hidden="true">
+            <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="98" fill="none" stroke="#C99483" stroke-width="1" stroke-dasharray="2 6" opacity=".6"/><circle cx="100" cy="100" r="78" fill="none" stroke="#C99483" stroke-width="1" opacity=".35"/></svg>
+          </div>
+          <div class="dt-scanline" aria-hidden="true"></div>
+
+          <span class="corner-badge tr badge-pill warm"><span class="dot live" aria-hidden="true"></span>AI-примерка</span>
+          <div class="dt-pill weather">18°C · Облачно</div>
+          <div class="dt-pill look">
+            <span class="look-name">
+              <svg class="spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+              <span>Образ на сегодня</span>
+            </span>
+            <span class="look-meta">Digital Twin</span>
+          </div>
+        </div>
+
+        <div class="hero-offer">
+          <span class="hangtag" aria-hidden="true">
+            <svg viewBox="0 0 60 78">
+              <path d="M30 4C24 4 24 12 30 16" fill="none" stroke="#AD7C6A" stroke-width="2" stroke-linecap="round"/>
+              <rect x="10" y="16" width="40" height="52" rx="8" fill="#C99483"/>
+              <circle cx="30" cy="26" r="3.4" fill="#F7F4F0"/>
+              <rect x="19" y="38" width="22" height="2.6" rx="1.3" fill="#F7F4F0" opacity=".85"/>
+              <rect x="19" y="46" width="15" height="2.6" rx="1.3" fill="#F7F4F0" opacity=".6"/>
+            </svg>
+          </span>
+          <div class="ho-top"><span class="tag tag--warm">Один тап</span></div>
+          <h3 class="serif">Образ меняется на глазах</h3>
+          <p>Выбираешь повод — AI сканирует гардероб и переодевает твоего двойника.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MARQUEE ============ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-item">Твой гардероб<i></i>Твой стиль<i></i>Твой Digital Twin<i></i>Образ за один тап<i></i>Погода учтена<i></i></div>
+      <div class="marquee-item">Твой гардероб<i></i>Твой стиль<i></i>Твой Digital Twin<i></i>Образ за один тап<i></i>Погода учтена<i></i></div>
+    </div>
+  </div>
+
+  <div class="three-q">
+    <div class="wrap">
+      <div class="tq-item">
+        <div class="tq-q">Что это?</div>
+        <div class="tq-a">Твой персональный AI-стилист.</div>
+      </div>
+      <div class="tq-item">
+        <div class="tq-q">Что он делает?</div>
+        <div class="tq-a">Знает твой гардероб и собирает образы под тебя.</div>
+      </div>
+      <div class="tq-item">
+        <div class="tq-q">Почему это интересно?</div>
+        <div class="tq-a">Показывает образ прямо на твоём Digital Twin.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DEMO ============ -->
+  <section id="demo">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Как это работает</div>
+        <h2>Один тап — и весь образ готов</h2>
+        <p>Выбираешь повод — AI сканирует гардероб и «переодевает» Digital Twin. Двойник остаётся в выбранном образе, пока ты не попросишь другой.</p>
+      </div>
+
+      <div class="demo-grid">
+        <!-- слева: двойник + результат -->
+        <div class="demo-stage reveal">
+          <div class="dt-card" id="demoCard">
+            <img class="dt-media dt-still on" id="stillA" src="assets/look-home.jpg" alt="Digital Twin в выбранном образе" width="720" height="960" decoding="async">
+            <img class="dt-media dt-still" id="stillB" alt="" aria-hidden="true" width="720" height="960" decoding="async">
+            <div class="dt-tone" aria-hidden="true"></div>
+            <div class="dt-mesh" aria-hidden="true"></div>
+            <div class="dt-rings" aria-hidden="true">
+              <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="98" fill="none" stroke="#C99483" stroke-width="1" stroke-dasharray="2 6" opacity=".6"/></svg>
+            </div>
+            <div class="dt-scanline" aria-hidden="true"></div>
+
+            <span class="corner-badge tr badge-pill" id="demoStatusBadge"><span class="dot live" aria-hidden="true"></span>Образ подобран</span>
+            <div class="dt-pill weather" id="demoTemp">18°C · Дома тепло</div>
+            <div class="dt-pill look">
+              <span class="look-name">
+                <svg class="spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+                <span id="demoScenarioName">Дом</span>
+              </span>
+              <span class="look-meta">Digital Twin</span>
+            </div>
+          </div>
+
+          <div class="dt-chips" id="garmentChips"></div>
+
+          <div class="result-card">
+            <div class="rc-top">
+              <div>
+                <div class="rc-title">Образ готов</div>
+                <div class="rc-meta" id="rcMeta">Дом · 18°C</div>
+              </div>
+              <span class="badge-pill warm">Собрано AI</span>
+            </div>
+
+            <div class="rc-stats">
+              <div class="rc-stat"><div class="k">Вещей в образе</div><div class="v" id="rcItems">4</div></div>
+              <div class="rc-stat"><div class="k">Источник</div><div class="v">Твой гардероб</div></div>
+            </div>
+
+            <p class="rc-comment" id="rcComment">Сегодня прохладно. Я выбрал мягкий и комфортный образ из твоего гардероба.</p>
+
+            <div class="rating">
+              <span class="rt-label">Оцени образ:</span>
+              <div class="stars" id="stars" role="group" aria-label="Оценка образа"></div>
+              <span class="rt-label" id="rtHint"></span>
+            </div>
+
+            <div class="rc-actions">
+              <button class="btn btn-primary btn-sm" type="button">Нравится ♡</button>
+              <button class="btn btn-secondary btn-sm" type="button" id="rerollBtn">Другой вариант ↻</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- справа: выбор повода -->
+        <div class="reveal">
+          <div class="eyebrow" style="margin-bottom:22px;">Куда сегодня?</div>
+          <div class="scen-grid" id="scenGrid"><!-- рендерится из JS --></div>
+
+          <div class="soon-row">
+            <span class="soon-label">Скоро</span>
+            <span class="soon-pill">🎭 Театр</span>
+            <span class="soon-pill">🏃 Спорт</span>
+            <span class="soon-pill">✈️ Путешествие</span>
+            <span class="soon-pill">🎉 Вечеринка</span>
+          </div>
+
+          <p class="menu-note">Карточки показывают реальные кадры примерки — те же четыре образа, что двойник примеряет в видео выше. Остальные сценарии добавим по мере съёмок гардероба.</p>
+        </div>
+      </div>
+
+      <div class="steps4 reveal">
+        <div class="step4"><div class="num">01</div><h4>Сканирование</h4><p>Тонкая световая линия проходит по Digital Twin.</p></div>
+        <div class="step4"><div class="num">02</div><h4>Анализ</h4><p>AI сверяет вещи в гардеробе с погодой и поводом.</p></div>
+        <div class="step4"><div class="num">03</div><h4>Трансформация</h4><p>Одежда словно проявляется из света и ткани.</p></div>
+        <div class="step4"><div class="num">04</div><h4>Результат</h4><p>Двойник замирает в новом образе — можно рассмотреть.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WARDROBE ============ -->
+  <section id="wardrobe">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Пополнение гардероба</div>
+        <h2>Купил новую вещь?<br>Добавь её за 10 секунд.</h2>
+      </div>
+
+      <div class="add-grid">
+        <div class="add-card reveal">
+          <span class="corner-badge tr badge-pill muted">Быстро</span>
+          <div class="add-step">ШАГ 01</div>
+          <div class="add-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#252321" stroke-width="1.7"><path d="M4 8h3l2-3h6l2 3h3v11H4V8z"/><circle cx="12" cy="13" r="3.2"/></svg></div>
+          <h4>Сделай фото</h4>
+          <p>Сфотографируй вещь — прямо сейчас, без подготовки.</p>
+        </div>
+        <div class="add-card reveal">
+          <div class="add-step">ШАГ 02</div>
+          <div class="add-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#252321" stroke-width="1.7"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 17l5-5 3 3 3-4 4 6"/></svg></div>
+          <h4>Загрузи</h4>
+          <p>Выбери изображение из галереи или файлов.</p>
+        </div>
+        <div class="add-card reveal">
+          <span class="corner-badge tr badge-pill muted">Из магазина</span>
+          <div class="add-step">ШАГ 03</div>
+          <div class="add-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#252321" stroke-width="1.7"><path d="M6 4h9l4 4v12H6V4z"/><path d="M15 4v4h4"/></svg></div>
+          <h4>Скриншот магазина</h4>
+          <p>Добавь скриншот товара — из любого магазина.</p>
+        </div>
+      </div>
+      <div class="add-foot reveal">Куплена новая вещь? AI проанализирует её и сразу покажет, с чем она сочетается.</div>
+    </div>
+  </section>
+
+  <!-- ============ RECOMMENDATION ============ -->
+  <section>
+    <div class="wrap">
+      <div class="rec-wrap reveal">
+        <div class="rec-copy">
+          <div class="rec-label">Стилист иногда советует</div>
+          <h3 class="serif">Я нашёл кое-что для тебя</h3>
+          <p class="lead">Этот бежевый жакет подойдёт к 17 вещам из твоего гардероба.</p>
+          <p class="rec-caption">Так в будущем может выглядеть нативная рекомендация — не реклама, а совет стилиста. Это и есть будущая бизнес-модель AI Wardrobe.</p>
+        </div>
+
+        <div class="rec-card">
+          <div class="rec-thumb">
+            <!-- иллюстрация товара: бежевый жакет oversize -->
+            <svg viewBox="0 0 400 320" role="img" aria-label="Бежевый жакет oversize">
+              <defs>
+                <linearGradient id="jBg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#EDE7E0"/>
+                </linearGradient>
+                <linearGradient id="jCloth" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#F0E3D4"/><stop offset="55%" stop-color="#E3D2BE"/><stop offset="100%" stop-color="#D6C1A9"/>
+                </linearGradient>
+                <linearGradient id="jClothDark" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#E4D3BF"/><stop offset="100%" stop-color="#CDB69C"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="320" fill="url(#jBg)"/>
+              <ellipse cx="200" cy="300" rx="120" ry="16" fill="#C9B49C" opacity=".22"/>
+
+              <!-- вешалка -->
+              <path d="M200 34c-7 0-11 4.4-11 9.4 0 3.6 2.2 6 5.6 7.3" fill="none" stroke="#B9A48D" stroke-width="3.4" stroke-linecap="round"/>
+              <path d="M200 51l-58 25h116z" fill="none" stroke="#B9A48D" stroke-width="3.4" stroke-linejoin="round"/>
+
+              <!-- рукава -->
+              <path d="M150 78c-22 6-33 16-38 34l-16 118 40 12 22-104z" fill="url(#jClothDark)"/>
+              <path d="M250 78c22 6 33 16 38 34l16 118-40 12-22-104z" fill="url(#jClothDark)"/>
+
+              <!-- корпус -->
+              <path d="M150 76h100l14 46-8 152H144l-8-152z" fill="url(#jCloth)"/>
+              <!-- левая пола внахлёст -->
+              <path d="M200 76h-50l-14 46 8 152h56z" fill="#E9DAC7"/>
+              <!-- воротник и лацканы -->
+              <path d="M172 76l28 62 28-62-12-6-16 16-16-16z" fill="#F3E8DB"/>
+              <path d="M172 76l28 62 28-62" fill="none" stroke="#C9B49C" stroke-width="2"/>
+              <!-- линия запаха -->
+              <path d="M200 138v136" stroke="#C9B49C" stroke-width="2" opacity=".8"/>
+              <!-- пуговицы -->
+              <circle cx="188" cy="168" r="5.2" fill="#C99483"/>
+              <circle cx="188" cy="200" r="5.2" fill="#C99483"/>
+              <!-- карманы -->
+              <path d="M154 214h34M212 214h34" stroke="#C9B49C" stroke-width="2.6" stroke-linecap="round"/>
+              <!-- фактура -->
+              <g stroke="#D8C6AF" stroke-width="1.4" opacity=".7">
+                <path d="M162 110v152M238 110v152"/>
+              </g>
+              <!-- фирменная бирка -->
+              <g transform="translate(250 128) rotate(9)">
+                <path d="M8 0C3 0 3 7 8 10" fill="none" stroke="#AD7C6A" stroke-width="1.8" stroke-linecap="round"/>
+                <rect x="-6" y="10" width="30" height="38" rx="6" fill="#C99483"/>
+                <circle cx="9" cy="18" r="2.4" fill="#FFF7F0"/>
+                <rect x="1" y="27" width="16" height="2" rx="1" fill="#FFF7F0" opacity=".85"/>
+                <rect x="1" y="33" width="10" height="2" rx="1" fill="#FFF7F0" opacity=".6"/>
+              </g>
+            </svg>
+            <span class="corner-badge badge-pill">Подходит к твоим вещам</span>
+          </div>
+
+          <div class="rec-head">
+            <div class="rec-name">Бежевый жакет oversize</div>
+            <div class="rec-swatches" aria-label="Доступные оттенки">
+              <span class="rec-swatch" style="background:#E3D2BE" title="Бежевый"></span>
+              <span class="rec-swatch" style="background:#C99483" title="Терракотовый"></span>
+              <span class="rec-swatch" style="background:#252321" title="Тёмный"></span>
+            </div>
+          </div>
+          <div class="rec-tags">
+            <span class="tag tag--warm">Oversize</span>
+            <span class="tag tag--sand">Базовый слой</span>
+          </div>
+          <div class="rec-price">≈ 6 500 ₽ <small>· пример</small></div>
+          <div class="rec-actions">
+            <button class="btn btn-secondary btn-sm" type="button">Посмотреть</button>
+            <button class="btn btn-primary btn-sm" type="button">Добавить в образ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAT ============ -->
+  <section>
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <div class="eyebrow">AI-стилист</div>
+        <h2>Просто спроси.</h2>
+        <p>Чат понимает контекст: гардероб, погоду и повод — и предлагает готовые варианты, а не советы «в общем».</p>
+      </div>
+
+      <div class="chat-shell reveal">
+        <span class="corner-badge badge-pill solid">Чат в разработке</span>
+
+        <!-- шапка окна -->
+        <div class="chat-bar">
+          <span class="chat-bar-ic" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none">
+              <path d="M32 17c-3.6 0-6 2.2-6 5 0 2 1.2 3.3 3 4.2v2.2L14 36.5c-1.6.9-2.6 2.4-2.6 4.1C11.4 43.6 13.9 46 17 46h30c3.1 0 5.6-2.4 5.6-5.4 0-1.7-1-3.2-2.6-4.1L35 28.4v-2.2"
+                    stroke="#FFF7F0" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="chat-bar-title">
+            <b>AI-стилист</b>
+            <span class="chat-bar-status"><span class="dot" aria-hidden="true"></span>онлайн · видит твой гардероб</span>
+          </span>
+          <span class="chat-bar-ctrls" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </span>
+        </div>
+
+        <!-- аватар AI, приклеенный к краю окна -->
+        <span class="chat-ava" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none">
+            <path d="M32 17c-3.6 0-6 2.2-6 5 0 2 1.2 3.3 3 4.2v2.2L14 36.5c-1.6.9-2.6 2.4-2.6 4.1C11.4 43.6 13.9 46 17 46h30c3.1 0 5.6-2.4 5.6-5.4 0-1.7-1-3.2-2.6-4.1L35 28.4v-2.2"
+                  stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M46 14.5l1.2 3.4 3.4 1.2-3.4 1.2-1.2 3.4-1.2-3.4-3.4-1.2 3.4-1.2z" fill="currentColor"/>
+          </svg>
+        </span>
+
+        <!-- тело диалога -->
+        <div class="chat-body">
+          <div class="msg-row right">
+            <div class="bubble user">Что надеть на свидание вечером?</div>
+            <img class="msg-ava" src="assets/thumb-date.jpg" alt="" aria-hidden="true" loading="lazy" decoding="async">
+          </div>
+          <div class="bubble ai">Я бы выбрал что-то элегантное, но не слишком формальное. Вот 3 варианта из твоего гардероба.</div>
+
+          <div class="variant-row">
+            <div class="variant-tile">
+              <img src="assets/thumb-date.jpg" alt="Голубое платье и босоножки" loading="lazy" decoding="async">
+              <div class="vt-cap"><b>Вариант 1</b>Платье + босоножки</div>
+            </div>
+            <div class="variant-tile">
+              <img src="assets/thumb-work.jpg" alt="Тёмный костюм с рубашкой" loading="lazy" decoding="async">
+              <div class="vt-cap"><b>Вариант 2</b>Костюм + рубашка</div>
+            </div>
+            <div class="variant-tile">
+              <img src="assets/thumb-city.jpg" alt="Тёмное тедди-пальто" loading="lazy" decoding="async">
+              <div class="vt-cap"><b>Вариант 3</b>Пальто + база</div>
+            </div>
+          </div>
+
+          <div class="quick-row">
+            <div class="g-chip">На работу</div>
+            <div class="g-chip">На свидание</div>
+            <div class="g-chip">На вечеринку</div>
+            <div class="g-chip">В поездку</div>
+            <div class="g-chip">Хочу выглядеть дорого</div>
+            <div class="g-chip">Что купить?</div>
+          </div>
+
+          <div class="weather-note">
+            <span aria-hidden="true">☁️</span>
+            <span><b>18°C, вероятность дождя 60%.</b> Поэтому я не рекомендую открытую обувь.</span>
+          </div>
+        </div>
+
+        <!-- строка ввода (макет) -->
+        <div class="chat-input" aria-hidden="true">
+          <div class="chat-input-field">Спроси, что надеть…</div>
+          <span class="chat-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13M12 5l7 7-7 7"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIGITAL TWIN ============ -->
+  <section id="twin">
+    <div class="wrap twin-grid">
+      <div class="reveal">
+        <div class="eyebrow">Digital Twin</div>
+        <h2>Это больше,<br>чем гардероб.</h2>
+        <p class="hero-sub" style="margin-top:20px;">Познакомься со своим Digital Twin. Он развивается вместе с тобой — вместе с твоим стилем меняются образ, комната и настроение.</p>
+        <div class="twin-feats">
+          <div class="twin-feat">Новый образ</div>
+          <div class="twin-feat">Новая комната</div>
+          <div class="twin-feat">Новая анимация</div>
+          <div class="twin-feat">Новый день</div>
+        </div>
+      </div>
+      <div class="twin-stage reveal">
+        <div class="dt-card">
+          <video class="dt-media" src="0807.mp4" poster="assets/look-city.jpg"
+                 autoplay loop muted playsinline preload="metadata"
+                 aria-label="Digital Twin меняет образы"></video>
+          <div class="dt-tone" aria-hidden="true"></div>
+          <div class="dt-rings" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="#C99483" stroke-width="1" opacity=".35"/></svg></div>
+          <span class="corner-badge tl badge-pill"><span class="dot live" aria-hidden="true"></span>Твой двойник</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wrap" style="margin-top:70px;">
+      <div class="eyebrow reveal">Скоро</div>
+      <div class="game-card reveal">
+        <span class="corner-badge badge-pill warm">Концепция</span>
+        <div class="game-top">
+          <div class="game-level">Уровень 07</div>
+          <div class="game-tag">Style Explorer</div>
+        </div>
+        <div class="xp-bar"><div class="xp-fill"></div></div>
+        <div class="xp-label">XP 740 / 1000</div>
+        <div class="badge-row">
+          <div class="badge">🏆 30 дней подряд</div>
+          <div class="badge">🏆 100 образов</div>
+          <div class="badge">🏆 20 новых сочетаний</div>
+        </div>
+        <div class="game-caption">В первой демоверсии — только концепция. Полную игровую механику добавим позже.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="final">
+    <div class="wrap">
+      <h2 class="serif reveal">Твой стиль уже ждёт тебя.</h2>
+      <p class="reveal">Присоединяйся, пока мы собираем первую версию AI Wardrobe.</p>
+      <a href="#demo" class="btn btn-primary reveal">Создать свой гардероб →</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="logo logo--lg">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none">
+              <path d="M32 17c-3.6 0-6 2.2-6 5 0 2 1.2 3.3 3 4.2v2.2L14 36.5c-1.6.9-2.6 2.4-2.6 4.1C11.4 43.6 13.9 46 17 46h30c3.1 0 5.6-2.4 5.6-5.4 0-1.7-1-3.2-2.6-4.1L35 28.4v-2.2"
+                    stroke="#FFF7F0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M46 14.5l1.2 3.4 3.4 1.2-3.4 1.2-1.2 3.4-1.2-3.4-3.4-1.2 3.4-1.2z" fill="#FFF7F0"/>
+            </svg>
+          </span>
+          <span class="logo-type">
+            <span class="logo-name"><span class="ai">AI</span> <span class="wd">Wardrobe</span></span>
+            <span class="logo-tag">Digital Stylist</span>
+          </span>
+        </span>
+        <p class="foot-about">Персональный AI-стилист, который знает твой гардероб и каждый день собирает образ под тебя.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Продукт</h5>
+        <a href="#demo">Как это работает</a>
+        <a href="#wardrobe">Гардероб</a>
+        <a href="#twin">Digital Twin</a>
+      </div>
+      <div class="foot-col">
+        <h5>Статус</h5>
+        <span>Демо-концепция</span>
+        <span>Первая версия в сборке</span>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span id="footNote">Демо-концепция в разработке</span>
+      <span>Кадры примерки — из демо-съёмки продукта</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* -------------------------------------------------------
+     Сценарии. `shot` — стоп-кадр примерки (вырезан из
+     демо-ролика), `clip` — отрезок исходного видео с этим же
+     образом. Ролик ~4.27 c и делится на 4 равные части.
+     Заменишь съёмку — правь только эти поля.
+     ------------------------------------------------------- */
+  var SCENARIOS = [
+    {
+      key:'home', label:'Дом', emoji:'🏠',
+      shot:'assets/look-home.jpg', thumb:'assets/thumb-home.jpg', clip:[0.05,1.00],
+      temp:'18°C · Дома тепло', weather:'Облачно', when:'Весь день', style:'Casual',
+      tags:['Комфорт','Мягкие ткани','Базовый'],
+      items:['Белая футболка','Прямые джинсы','Кремовый кардиган','Домашние тапочки'],
+      alt:'Белая футболка и прямые джинсы',
+      comment:'Сегодня прохладно. Я выбрал мягкий и комфортный образ из твоего гардероба.'
+    },
+    {
+      key:'work', label:'Работа', emoji:'💼',
+      shot:'assets/look-work.jpg', thumb:'assets/thumb-work.jpg', clip:[1.18,2.05],
+      temp:'17°C · Ветрено', weather:'Ветрено', when:'С 9 утра', style:'Smart',
+      tags:['Строгий','Тёмная база','Офис'],
+      items:['Тёмный жакет','Прямые брюки','Белая рубашка','Лаконичные туфли'],
+      alt:'Тёмный костюм с белой рубашкой',
+      comment:'Взял тёмный костюм — он держит форму весь день и легко освежается сменой верха.'
+    },
+    {
+      key:'date', label:'Свидание', emoji:'❤️',
+      shot:'assets/look-date.jpg', thumb:'assets/thumb-date.jpg', clip:[2.25,3.12],
+      temp:'15°C · Вечер', weather:'Ясно', when:'После 19:00', style:'Elegant',
+      tags:['Элегантно','Цвет','Вечер'],
+      items:['Голубое платье','Босоножки','Небольшая сумка','Золотые украшения'],
+      alt:'Голубое платье и золотистые босоножки',
+      comment:'Вечер особенный. Собрал сдержанный и элегантный образ без лишних деталей.'
+    },
+    {
+      key:'city', label:'Город', emoji:'🏙️',
+      shot:'assets/look-city.jpg', thumb:'assets/thumb-city.jpg', clip:[3.32,4.20],
+      temp:'12°C · Свежо', weather:'Свежо', when:'Днём', style:'Cozy',
+      tags:['Тепло','Фактура','Верхний слой'],
+      items:['Тёмное тедди-пальто','Белая футболка','Прямые джинсы','Ботинки'],
+      alt:'Объёмное тедди-пальто поверх базы',
+      comment:'На улице свежо — добавил объёмное пальто поверх привычной базы.'
+    }
+  ];
+
+  var byKey = {};
+  SCENARIOS.forEach(function(s){ byKey[s.key] = s; });
+
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    scenGrid:  $('scenGrid'),
+    chips:     $('garmentChips'),
+    demoTemp:  $('demoTemp'),
+    demoName:  $('demoScenarioName'),
+    demoBadge: $('demoStatusBadge'),
+    rcMeta:    $('rcMeta'),
+    rcItems:   $('rcItems'),
+    rcComment: $('rcComment'),
+    demoCard:  $('demoCard'),
+    heroCard:  $('heroCard'),
+    heroVideo: $('heroVideo'),
+    stillA:    $('stillA'),
+    stillB:    $('stillB'),
+    stars:     $('stars'),
+    rtHint:    $('rtHint'),
+    reroll:    $('rerollBtn')
+  };
+
+  var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7"/></svg>';
+  var STAR  = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg>';
+
+  /* ---------------- Карточки сценариев ---------------- */
+  function scenarioCard(s){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scen-card';
+    btn.dataset.key = s.key;
+    btn.setAttribute('aria-pressed','false');
+    btn.innerHTML =
+      '<div class="sc-photo">' +
+        '<img src="' + s.thumb + '" alt="' + s.alt + '" loading="lazy" decoding="async">' +
+        '<span class="corner-badge badge-pill warm">Готово</span>' +
+        '<span class="sc-count">' + s.items.length + ' вещи</span>' +
+      '</div>' +
+      '<div class="sc-body">' +
+        '<div class="sc-head">' +
+          '<span class="sc-rate">' + STAR + 'AI-подбор</span>' +
+          '<span class="sc-sep" aria-hidden="true">·</span>' +
+          '<span class="sc-when">' + s.when + '</span>' +
+        '</div>' +
+        '<div class="sc-title"><span class="emo" aria-hidden="true">' + s.emoji + '</span>' + s.label + '</div>' +
+        '<div class="sc-tags">' + s.tags.map(function(t,i){
+            return '<span class="tag ' + (i === 0 ? 'tag--warm' : i === 1 ? 'tag--sand' : 'tag--ink') + '">' + t + '</span>';
+          }).join('') + '</div>' +
+        '<div class="sc-metrics">' +
+          '<div class="sc-metric"><div class="k">Погода</div><div class="v">' + s.weather + '</div></div>' +
+          '<div class="sc-metric"><div class="k">Настроение</div><div class="v">' + s.style + '</div></div>' +
+        '</div>' +
+        '<div class="sc-foot">' +
+          '<span class="sc-author"><span class="sc-ava" aria-hidden="true"></span>AI-стилист</span>' +
+          '<span class="btn-round" aria-hidden="true">' + ARROW + '</span>' +
+        '</div>' +
+      '</div>';
+    btn.addEventListener('click', function(){ select(s.key, true); });
+    return btn;
+  }
+
+  function renderScenarioCards(){
+    var frag = document.createDocumentFragment();
+    SCENARIOS.forEach(function(s){ frag.appendChild(scenarioCard(s)); });
+    els.scenGrid.appendChild(frag);
+  }
+
+  /* ---------------- Смена стоп-кадра ----------------
+     Двойник в демо стоит на стоп-кадре и не «дёргается»:
+     новый образ проявляется через второй слой картинки.
+     -------------------------------------------------- */
+  var frontIsA = true;
+
+  function showShot(s){
+    var front = frontIsA ? els.stillA : els.stillB;
+    var back  = frontIsA ? els.stillB : els.stillA;
+    if(front.getAttribute('src') === s.shot) return;
+
+    var swap = function(){
+      back.alt = s.alt;
+      back.removeAttribute('aria-hidden');
+      front.setAttribute('aria-hidden','true');
+      front.alt = '';
+      back.classList.add('on');
+      front.classList.remove('on');
+      frontIsA = !frontIsA;
+    };
+
+    back.addEventListener('load', swap, {once:true});
+    back.src = s.shot;
+    if(back.complete) swap();
+  }
+
+  /* ---------------- Рендер состояния ---------------- */
+  var scanTimer = null;
+
+  function select(key, animate){
+    var s = byKey[key];
+    if(!s) return;
+
+    Array.prototype.forEach.call(els.scenGrid.querySelectorAll('.scen-card'), function(c){
+      c.setAttribute('aria-pressed', String(c.dataset.key === key));
+    });
+
+    if(animate && !reduceMotion){
+      els.demoCard.classList.add('scanning');
+      els.heroCard.classList.add('scanning');
+      els.demoBadge.innerHTML = '<span class="dot live"></span>Сканирую';
+      clearTimeout(scanTimer);
+      // образ проявляется в середине скана
+      setTimeout(function(){ showShot(s); }, 380);
+      scanTimer = setTimeout(function(){
+        els.demoCard.classList.remove('scanning');
+        els.heroCard.classList.remove('scanning');
+        els.demoBadge.innerHTML = '<span class="dot live"></span>Образ подобран';
+      }, 1200);
+    } else {
+      showShot(s);
+      els.demoBadge.innerHTML = '<span class="dot live"></span>Образ подобран';
+    }
+
+    els.demoTemp.textContent = s.temp;
+    els.demoName.textContent = s.label;
+    els.rcMeta.textContent = s.label + ' · ' + s.temp.split('·')[0].trim();
+    els.rcItems.textContent = s.items.length;
+    els.rcComment.textContent = s.comment;
+
+    els.chips.innerHTML = s.items.map(function(i, n){
+      return '<span class="g-chip" style="animation-delay:' + (n * 70) + 'ms">' + i + '</span>';
+    }).join('');
+
+    setRating(0);
+  }
+
+  /* ---------------- Рейтинг образа ---------------- */
+  function setRating(v){
+    Array.prototype.forEach.call(els.stars.children, function(btn, i){
+      btn.classList.toggle('on', i < v);
+      btn.setAttribute('aria-pressed', String(i < v));
+    });
+    els.rtHint.textContent = v ? 'Спасибо — учту в следующем образе' : '';
+  }
+
+  function renderStars(){
+    for(var i = 1; i <= 5; i++){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'star';
+      b.innerHTML = STAR;
+      b.setAttribute('aria-label', 'Оценка ' + i + ' из 5');
+      b.setAttribute('aria-pressed','false');
+      (function(v){ b.addEventListener('click', function(){ setRating(v); }); })(i);
+      els.stars.appendChild(b);
+    }
+  }
+
+  /* ---------------- Прокрутка-ревил ---------------- */
+  function initReveal(){
+    var items = document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){
+      Array.prototype.forEach.call(items, function(el){ el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {threshold:.12, rootMargin:'0px 0px -40px 0px'});
+    Array.prototype.forEach.call(items, function(el){ io.observe(el); });
+  }
+
+  /* ---------------- Init ---------------- */
+  renderScenarioCards();
+  renderStars();
+  initReveal();
+  select('home', false);
+
+  els.reroll.addEventListener('click', function(){
+    var cur = els.scenGrid.querySelector('.scen-card[aria-pressed="true"]');
+    var i = SCENARIOS.map(function(s){ return s.key; }).indexOf(cur ? cur.dataset.key : 'home');
+    select(SCENARIOS[(i + 1) % SCENARIOS.length].key, true);
+  });
+
+  if(reduceMotion && els.heroVideo){
+    els.heroVideo.removeAttribute('autoplay');
+    els.heroVideo.pause();
+  }
+
+  $('footNote').textContent = 'Демо-концепция в разработке · ' + new Date().getFullYear();
+})();
+</script>
+
+</body>
+</html>
